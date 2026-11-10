@@ -1,0 +1,27 @@
+# Optional: push this folder to GitHub and the Windows .exe and Linux program are built for you
+# (Actions tab → latest run → Artifacts).
+name: Build Techmiary Sales
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt pyinstaller
+      - name: Build
+        shell: bash
+        run: >
+          pyinstaller --noconfirm --clean --windowed --onefile --name TechmiarySales
+          --icon assets/techmiary.ico
+          --exclude-module PySide6.QtWebEngineCore --exclude-module PySide6.QtWebEngineWidgets
+          --exclude-module PySide6.Qt3DCore --exclude-module PySide6.QtQuick --exclude-module PySide6.QtQml
+          main.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TechmiarySales-${{ runner.os }}
+          path: dist/*
