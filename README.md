@@ -54,7 +54,8 @@ python main.py
 
 ### How the downloads are made
 Every push to GitHub runs `.github/workflows/build.yml`, which builds the Windows installer and the Linux program.
-Pushing a version tag (for example `git tag v1.0.1 && git push --tags`) publishes them on the **Releases** page.
+Builds from `main` are published on the **Releases** page as version `v` + the number in the `VERSION` file.
+To release an update, change `VERSION` (for example to `1.0.1`) and push.
 
 ## Project layout
 
