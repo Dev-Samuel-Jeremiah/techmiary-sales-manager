@@ -36,7 +36,12 @@ chmod +x TechmiarySales
 ./install_linux.sh        # optional: adds it to your applications menu
 ```
 
-### Windows – build the .exe once
+### Windows – installer
+Download **TechmiarySales-Setup.exe** from the repository's **Releases** page and run it. It adds Techmiary Sales
+Manager to the Start menu (and the desktop, if you tick the box). Windows may show "Windows protected your PC"
+because the program is new and unsigned: click **More info → Run anyway**.
+
+### Windows – build the .exe yourself (optional)
 1. Install Python 3.10 or newer from python.org. On the first installer screen tick **Add python.exe to PATH**.
 2. Double‑click **build_windows.bat** in this folder and wait (it downloads what it needs, about 5 minutes).
 3. Your program is `dist\TechmiarySales.exe`. Copy it to the Desktop and double‑click to run.
@@ -47,9 +52,9 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### Optional: let GitHub build both versions
-Push this folder to a GitHub repository. The workflow in `.github/workflows/build.yml` builds
-`TechmiarySales.exe` (Windows) and `TechmiarySales` (Linux); download them from the run's **Artifacts**.
+### How the downloads are made
+Every push to GitHub runs `.github/workflows/build.yml`, which builds the Windows installer and the Linux program.
+Pushing a version tag (for example `git tag v1.0.1 && git push --tags`) publishes them on the **Releases** page.
 
 ## Project layout
 
@@ -62,6 +67,7 @@ app/main_window.py      sidebar and page switching
 app/page_*.py           Dashboard, New sale, Sales history, Services, Reports, Settings
 app/receipt.py          receipt view, print and PDF
 assets/                 app icon (.png, .ico)
+installer/              Inno Setup script for the Windows installer
 ```
 
 Amounts are stored as whole Naira. Built with Python, PySide6 (Qt) and SQLite.

@@ -1,27 +1,70 @@
-# Optional: push this folder to GitHub and the Windows .exe and Linux program are built for you
-# (Actions tab → latest run → Artifacts).
+# Builds the Windows installer and the Linux program on every push.
+# Pushing a tag such as v1.0.0 also publishes them as a GitHub Release (Releases page → download).
 name: Build Techmiary Sales
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-22.04]
-    runs-on: ${{ matrix.os }}
+  windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install -r requirements.txt pyinstaller
-      - name: Build
-        shell: bash
+      - name: Build TechmiarySales.exe
         run: >
           pyinstaller --noconfirm --clean --windowed --onefile --name TechmiarySales
           --icon assets/techmiary.ico
-          --exclude-module PySide6.QtWebEngineCore --exclude-module PySide6.QtWebEngineWidgets
-          --exclude-module PySide6.Qt3DCore --exclude-module PySide6.QtQuick --exclude-module PySide6.QtQml
+          --exclude-module PySide6.QtWebEngineCore --exclude-module PySide6.QtQuick --exclude-module PySide6.QtQml
           main.py
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\TechmiarySales.iss
       - uses: actions/upload-artifact@v4
         with:
-          name: TechmiarySales-${{ runner.os }}
-          path: dist/*
+          name: TechmiarySales-Windows
+          path: |
+            dist/TechmiarySales-Setup.exe
+            dist/TechmiarySales.exe
+      - if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/TechmiarySales-Setup.exe
+            dist/TechmiarySales.exe
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt pyinstaller
+      - name: Build TechmiarySales (Linux)
+        run: >
+          pyinstaller --noconfirm --clean --windowed --onefile --name TechmiarySales
+          --exclude-module PySide6.QtWebEngineCore --exclude-module PySide6.QtQuick --exclude-module PySide6.QtQml
+          main.py
+      - name: Package
+        run: |
+          mkdir -p TechmiarySales-Linux/assets
+          cp dist/TechmiarySales install_linux.sh README.md TechmiarySales-Linux/
+          cp assets/techmiary.png TechmiarySales-Linux/assets/
+          tar czf TechmiarySales-Linux.tar.gz TechmiarySales-Linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TechmiarySales-Linux
+          path: TechmiarySales-Linux.tar.gz
+      - if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: TechmiarySales-Linux.tar.gz
